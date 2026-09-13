@@ -2,6 +2,11 @@
 # Error on unset variables
 set -u
 
+if [ -n "${ZSH_VERSION-}" ]; then
+  SHUNIT_PARENT="$0"
+  setopt shwordsplit ksh_arrays
+fi
+
 . ../liquidprompt --no-activate
 
 typeset -a outputs values
@@ -244,11 +249,16 @@ values+=(48)
 function test_sensors {
 
   LP_ENABLE_TEMP=1
+  _LP_LINUX_TEMPERATURE_FILES=("")
   LP_TEMP_THRESHOLD=-1000000
 
   sensors() {
     printf '%s\n' "$__output"
   }
+  # Stub needed to test sensors with no output.
+  acpi() { :; }
+  smctemp() { :; }
+  iSMC() { :; }
 
   for (( index=0; index < ${#values[@]}; index++ )); do
     __output=${outputs[$index]}
@@ -262,7 +272,7 @@ function test_sensors {
       valid=1
     fi
 
-    __lp_temp_detect sensors
+    __lp_temp_detect
     assertEquals "Sensors temperature detect at index ${index}" "$valid" "$?"
 
     # Set the temp function in case the above detect said it was invalid.
@@ -278,10 +288,5 @@ function test_sensors {
     assertEquals "Sensors temperature return output at index ${index}" "${values[$index]}" "${lp_temperature-}"
   done
 }
-
-if [ -n "${ZSH_VERSION-}" ]; then
-  SHUNIT_PARENT="$0"
-  setopt shwordsplit ksh_arrays
-fi
 
 . ./shunit2

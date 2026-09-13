@@ -2,6 +2,11 @@
 Powerline Theme
 ***************
 
+.. deprecated:: 2.2
+   Use the spun off project `Liquid Prompt Powerline`_ instead.
+
+.. _`Liquid Prompt Powerline`: https://github.com/liquidprompt/liquidprompt-powerline
+
 The included ``themes/powerline/powerline.theme`` file includes two themes:
 
 .. contents::
@@ -13,11 +18,14 @@ Powerline
 The ``powerline`` theme is a clone of the `Powerline prompt`_. It copies the
 `default segments`_ of the Powerline prompt for Shell.
 
-This prompt is a proof of (a specific) concept: that Liquidprompt can do what
+This prompt is a proof of (a specific) concept: that Liquid Prompt can do what
 Powerline does, but faster.
 That said, this is a fully usable theme.
 
 .. versionadded:: 2.0
+
+.. deprecated:: 2.2
+   Use the spun off project `Liquid Prompt Powerline`_ instead.
 
 .. _`Powerline prompt`: https://github.com/powerline/powerline
 .. _`default segments`: https://github.com/powerline/powerline/blob/2.8/powerline/config_files/themes/shell/default.json
@@ -37,14 +45,15 @@ Git repository on a server:
 .. image:: powerline-med.png
    :alt:   server  user  ~  liquidprompt  1   main  
 
-When Liquidprompt is displaying nearly everything, it may look like this:
+When Liquid Prompt is displaying nearly everything, it may look like this:
 
 .. image:: powerline-long.png
-   :alt:   server  user  (e) pyenv  ~   …   liquidprompt   …   theme  3   main  ST 1  125  
+   :alt:   server  user  (e) pyenv  ~   …   liquidprompt   …   theme  
+       3   main  ST 1  125  
 
 .. note::
    The above "everything" image looks like it is missing some parts because this
-   theme does not implement all data sources of Liquidprompt. This is by design
+   theme does not implement all data sources of Liquid Prompt. This is by design
    to clone basic Powerline. For a Powerline theme that does show all data
    sources, see :ref:`Powerline Full <powerline_full>` below.
 
@@ -62,9 +71,9 @@ See the `Powerline Fonts installation docs`_ for help.
 Configuration
 =============
 
-Liquidprompt Configuration
---------------------------
-The following Liquidprompt config options are respected:
+Liquid Prompt Configuration
+---------------------------
+The following Liquid Prompt config options are respected:
 
 * :attr:`LP_DISABLED_VCS_PATHS`
 * :attr:`LP_ENABLE_BZR`
@@ -257,10 +266,13 @@ Powerline Full
 **************
 
 An extension of the ``powerline`` theme, ``powerline_full`` includes all data
-sources that Liquidprompt provides. The ordering is the same as the default
+sources that Liquid Prompt provides. The ordering is the same as the default
 theme.
 
 .. versionadded:: 2.0
+
+.. deprecated:: 2.2
+   Use the spun off project `Liquid Prompt Powerline`_ instead.
 
 Preview
 =======
@@ -277,10 +289,12 @@ Git repository on a server:
 .. image:: powerline_full-med.png
    :alt:  1&  user   server  ~  liquidprompt  main  
 
-When Liquidprompt is displaying nearly everything, it may look like this:
+When Liquid Prompt is displaying nearly everything, it may look like this:
 
 .. image:: powerline_full-long.png
-   :alt:  🕤  ⌁24%  ⌂1.68  θ90°  3d/2&/1z  user   server  ~   …   liquidprompt   …   theme  ⚞3  (e) pyenv  main(+10/-5,+3/-1)+*  20s  125  
+   :alt:  🕤  ⌁24%  ⌂1.68  θ90°  3d/2&/1z  user   server  ~   …   
+       liquidprompt   …   theme  ⚞3  (e) pyenv  main(+10/-5,+3/-1)+*  20s 
+        125  
 
 Setup
 =====
@@ -291,9 +305,9 @@ See the `Powerline Fonts installation docs`_ for help.
 Configuration
 =============
 
-Liquidprompt Configuration
---------------------------
-All Liquidprompt config options are respected, **except for**:
+Liquid Prompt Configuration
+---------------------------
+All Liquid Prompt config options are respected, **except for**:
 
 * :attr:`LP_COLOR_AWS_PROFILE`
 * :attr:`LP_COLOR_CONTAINER`
@@ -312,6 +326,7 @@ All Liquidprompt config options are respected, **except for**:
 * :attr:`LP_COLOR_NOWRITE`
 * :attr:`LP_COLOR_PATH_ROOT`
 * :attr:`LP_COLOR_PATH`
+* :attr:`LP_COLOR_PERL_VENV`
 * :attr:`LP_COLOR_PROXY`
 * :attr:`LP_COLOR_RUBY_VENV`
 * :attr:`LP_COLOR_RUNTIME`
@@ -381,7 +396,7 @@ _______
    :value: $LP_MARK_KUBECONTEXT
 
    The marker string used to indicate the following string is the name of a
-   kubectl context.
+   ``kubectl`` context.
 
    .. versionadded:: 2.1
 
@@ -393,6 +408,13 @@ _______
    environment.
 
    .. versionadded:: 2.1
+
+.. attribute:: POWERLINE_PERL_ENV_MARKER
+   :type: string
+   :value: "perl: "
+
+   The marker string used to indicate the following string is a Perl
+   environment.
 
 .. attribute:: POWERLINE_PROXY_MARKER
    :type: string
@@ -544,3 +566,11 @@ ______
    :value: (33, 17, 0, 0, 5, 4)
 
    Color for the current time section.
+
+.. attribute:: POWERLINE_WIFI_STRENGTH_COLOR
+   :type: array<int>
+   :value: (-1, 148, 0, 0, -1, 3)
+
+   Color for the wireless signal strength section.
+
+   .. versionadded:: 2.1

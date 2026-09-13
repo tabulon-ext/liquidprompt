@@ -15,8 +15,8 @@ a theme can provide a common look for all VCS types.
 See the default theme function :func:`_lp_vcs_details_color` for an example of
 this.
 
-.. function:: _lp_find_vcs() -> var:lp_vcs_type, var:lp_vcs_root, \
-   var:lp_vcs_dir, var:lp_vcs_subtype
+.. function:: _lp_find_vcs([directory]) -> var:lp_vcs_type, var:lp_vcs_root, \
+   var:lp_vcs_dir, var:lp_vcs_specific_dir, var:lp_vcs_subtype
 
    Returns ``true`` if the current directory is part of a version control
    repository. If not, returns ``1``. Returns the VCS type ID, subtype if one
@@ -35,6 +35,12 @@ this.
    if the database is valid or healthy. Use :func:`_lp_vcs_active` to test for
    that.
 
+   Git worktrees have two Git directories: one is the main directory in
+   *lp_vcs_dir*, which holds the DB and config. The other is the worktree
+   specific directory in *lp_vcs_specific_dir*, which holds working directory
+   specific information, like index and status like merge or rebase in
+   progress.
+
    .. note::
 
       *lp_vcs_dir* will not be set for Fossil repositories. Protect it with
@@ -42,8 +48,13 @@ this.
 
    .. note::
 
+      *lp_vcs_specific dir* will only be set for Git repositories. Protect it
+      with ``"${lp_vcs_specific_dir-}"``.
+
+   .. note::
+
       *lp_vcs_subtype* will not be set usually. The only currently supported
-      subtypes are "vcsh" and "svn", which are subtypes of "git".
+      subtypes are `vcsh` and `svn`, which are subtypes of `git`.
 
    .. versionadded:: 2.0
 
@@ -51,7 +62,14 @@ this.
       Added the *lp_vcs_dir* and *lp_vcs_subtype* return values.
       Added support for checking the :envvar:`GIT_DIR` environment variable.
 
-.. function:: _lp_are_vcs_enabled()
+   .. versionchanged:: 2.2
+      Added the *lp_vcs_specific_dir* return value.
+
+   .. versionchanged:: 2.4
+      Added support for resolving symbolic links via
+      :attr:`LP_ENABLE_VCS_RESOLVE_SYMLINKS`.
+
+.. function:: _lp_are_vcs_enabled([directory])
 
    Returns ``true`` if the current directory is not excluded by the config
    option :attr:`LP_DISABLED_VCS_PATHS`.
@@ -63,7 +81,7 @@ this.
 
 .. function:: _lp_vcs_active()
 
-   Returns ``true`` if the detected VCS is enabled in Liquidprompt and the
+   Returns ``true`` if the detected VCS is enabled in Liquid Prompt and the
    current directory is a valid repository of that type. This check should be
    done before running any other ``_lp_vcs_*`` data functions, but can be
    omitted for speed reasons if the checks done by :func:`_lp_find_vcs` are good
@@ -121,8 +139,8 @@ this.
 
 .. function:: _lp_vcs_head_status() -> var:lp_vcs_head_status, var:lp_vcs_head_details
 
-   Return ``true`` if the repo is in a special or unusual state. Return the
-   special status, and any extra details (like progress in a rebase) if
+   Return ``true`` if the repository is in a special or unusual state. Return
+   the special status, and any extra details (like progress in a rebase) if
    applicable.
 
    Many VCS providers do not have such information. This info is unlikely to be
@@ -135,6 +153,18 @@ this.
       ``"${lp_vcs_head_details-}"``.
 
    .. versionadded:: 2.0
+
+.. function:: _lp_vcs_remote() -> var:lp_vcs_remote
+
+   Return ``true`` if the current branch is a remote tracking branch. The
+   remote name is returned in *lp_vcs_remote*.
+
+   Many VCS providers do not have such information. Currently this is only
+   implemented for Git.
+
+   Can be enabled by :attr:`LP_ENABLE_VCS_REMOTE`.
+
+   .. versionadded:: 2.2
 
 .. function:: _lp_vcs_staged_files() -> var:lp_vcs_staged_files
 
@@ -153,6 +183,8 @@ this.
    lines.
 
    Many VCS providers do not support staging.
+
+   Can be disabled by :attr:`LP_ENABLE_VCS_LINES`.
 
    .. versionadded:: 2.0
 
@@ -185,8 +217,8 @@ this.
 .. function:: _lp_vcs_uncommitted_files() -> var:lp_vcs_uncommitted_files
 
    Returns ``true`` if any uncommitted files exist in the repository. In other
-   words, tracked files that contain uncommitted changes. Returns the number of
-   uncommitted files.
+   words, tracked files that contain uncommitted changes, regardless of if
+   those changes are staged. Returns the number of uncommitted files.
 
    Some VCS providers refer to uncommitted files as "modified" files.
 
@@ -195,11 +227,13 @@ this.
 .. function:: _lp_vcs_uncommitted_lines() -> var:lp_vcs_uncommitted_i_lines, var:lp_vcs_uncommitted_d_lines
 
    Returns ``true`` if any uncommitted lines exist in the repository. In other
-   words, tracked files that contain uncommitted changes. Returns the number of
-   uncommitted lines.
+   words, tracked files that contain uncommitted changes, regardless of if
+   those changes are staged. Returns the number of uncommitted lines.
 
    Some VCS providers refer to uncommitted lines as "modified" or "changed"
    lines.
+
+   Can be disabled by :attr:`LP_ENABLE_VCS_LINES`.
 
    .. versionadded:: 2.0
 
@@ -220,6 +254,8 @@ this.
    unstaged lines.
 
    Many VCS providers do not support staging.
+
+   Can be disabled by :attr:`LP_ENABLE_VCS_LINES`.
 
    .. versionadded:: 2.0
 
@@ -262,7 +298,7 @@ Bazaar
 
 .. function:: _lp_bzr_active()
 
-   Returns ``true`` if Bazaar is enabled in Liquidprompt and the current
+   Returns ``true`` if Bazaar is enabled in Liquid Prompt and the current
    directory is a valid Bazaar repository. This check should be done before
    running any other ``_lp_bzr_*`` data functions if accessing the Bazaar
    data functions directly instead of through the generic interface.
@@ -338,7 +374,7 @@ Fossil
 
 .. note::
    Fossil does not support unique tags. Fossil tags can refer to multiple
-   checkin IDs, so a matching tag is not a useful unique ID.
+   check-in IDs, so a matching tag is not a useful unique ID.
 
 .. note::
    Fossil does not support remote tracking branches. Fossil by default keeps the
@@ -347,7 +383,7 @@ Fossil
 
 .. function:: _lp_fossil_active()
 
-   Returns ``true`` if Fossil is enabled in Liquidprompt and the current
+   Returns ``true`` if Fossil is enabled in Liquid Prompt and the current
    directory is a valid Fossil repository. This check should be done before
    running any other ``_lp_fossil_*`` data functions if accessing the Fossil
    data functions directly instead of through the generic interface.
@@ -419,7 +455,7 @@ Git
 
 .. function:: _lp_git_active()
 
-   Returns ``true`` if Git is enabled in Liquidprompt and the current directory
+   Returns ``true`` if Git is enabled in Liquid Prompt and the current directory
    is a valid Git repository. This check should be done before running any other
    ``_lp_git_*`` data functions if accessing the Git data functions directly
    instead of through the generic interface.
@@ -463,6 +499,15 @@ Git
 
    .. versionadded:: 2.0
 
+.. function:: _lp_git_remote() -> var:lp_vcs_remote
+
+   Return ``true`` if the current branch is a remote tracking branch. The
+   remote name is returned in *lp_vcs_remote*.
+
+   Can be enabled by :attr:`LP_ENABLE_VCS_REMOTE`.
+
+   .. versionadded:: 2.2
+
 .. function:: _lp_git_staged_files() -> var:lp_vcs_staged_files
 
    Returns ``true`` if any staged files exist in the repository. In other words,
@@ -499,16 +544,16 @@ Git
 .. function:: _lp_git_uncommitted_files() -> var:lp_vcs_uncommitted_files
 
    Returns ``true`` if any uncommitted files exist in the repository. In other
-   words, tracked files that contain uncommitted changes. Returns the number of
-   uncommitted files.
+   words, tracked files that contain uncommitted changes, regardless of if
+   those changes are staged. Returns the number of uncommitted files.
 
    .. versionadded:: 2.0
 
 .. function:: _lp_git_uncommitted_lines() -> var:lp_vcs_uncommitted_i_lines, var:lp_vcs_uncommitted_d_lines
 
    Returns ``true`` if any uncommitted lines exist in the repository. In other
-   words, tracked files that contain uncommitted changes. Returns the number of
-   uncommitted lines.
+   words, tracked files that contain uncommitted changes, regardless of if
+   those changes are staged. Returns the number of uncommitted lines.
 
    .. versionadded:: 2.0
 
@@ -547,7 +592,7 @@ Mercurial
 
 .. function:: _lp_hg_active()
 
-   Returns ``true`` if Mercurial is enabled in Liquidprompt and the current
+   Returns ``true`` if Mercurial is enabled in Liquid Prompt and the current
    directory is a valid Mercurial repository. This check should be done before
    running any other ``_lp_hg_*`` data functions if accessing the Mercurial data
    functions directly instead of through the generic interface.
@@ -596,7 +641,7 @@ Mercurial
 
    .. versionadded:: 2.0
 
-   .. _`issue #217`: https://github.com/nojhan/liquidprompt/issues/217
+   .. _`issue #217`: https://github.com/liquidprompt/liquidprompt/issues/217
 
 .. function:: _lp_hg_head_status() -> var:lp_vcs_head_status
 
@@ -677,7 +722,7 @@ Subversion
 
 .. function:: _lp_svn_active()
 
-   Returns ``true`` if Subversion is enabled in Liquidprompt and the current
+   Returns ``true`` if Subversion is enabled in Liquid Prompt and the current
    directory is a valid Subversion repository. This check should be done before
    running any other ``_lp_svn_*`` data functions if accessing the Subversion
    data functions directly instead of through the generic interface.

@@ -2,6 +2,11 @@
 # Error on unset variables
 set -u
 
+if [ -n "${ZSH_VERSION-}" ]; then
+  SHUNIT_PARENT="$0"
+  setopt shwordsplit
+fi
+
 function test_test {
   assertTrue "[[ form of test" '[[ 1 -eq 1 ]]'
 
@@ -12,6 +17,11 @@ function test_test {
   assertFalse "[[ -z" '[[ -z foo ]]'
   assertFalse "[[ -z quoted" '[[ -z "foo" ]]'
   assertTrue "[[ -z empty quoted" '[[ -z "" ]]'
+
+  assertTrue "[[ nonempty" '[[ foo ]]'
+  assertTrue "[[ nonempty 1" '[[ 1 ]]'
+  assertTrue "[[ nonempty 0" '[[ 0 ]]'
+  assertFalse "[[ empty quoted" '[[ "" ]]'
 }
 
 function test_redirection {
@@ -299,10 +309,8 @@ function test_advanced_test {
 
   assertTrue "[[ -r file" '[[ -r ./shunit2 ]]'
   assertTrue "[[ -r dir" '[[ -r / ]]'
-  assertFalse "[[ -r locked file" '[[ -r /root ]]'
 
   assertTrue "[[ -w file" '[[ -w ./shunit2 ]]'
-  assertFalse "[[ -w locked file" '[[ -w /root ]]'
 
   assertTrue "[[ -d dir" '[[ -d / ]]'
   assertFalse "[[ -d dir" '[[ -d ./shunit2 ]]'
@@ -426,38 +434,10 @@ function test_integer {
 
   int+=1
   assertEquals "Int increment" 1 $int
+  assertTrue "Int true" "(( int ))"
 
   int+=5
   assertEquals "Int increment" 6 $int
-}
-
-function test_array {
-  # Since some shells do index 1 based instead of 0 based, we need to keep
-  # assumptions out of the code. If we assign an array with the array=(...)
-  # notation, then we can only itterate over it, never access an element.
-  # If we assign by index (array[idx]=...), then we can access by element, but
-  # must make sure we never use index 0, often by adding 1 to all indexes used
-
-  typeset -a array_a
-  array_a=(foo foo foo)
-
-  for item in "${array_a[@]}"; do
-    assertEquals "array element" "foo" "$item"
-  done
-
-  typeset IFS=' '
-  assertEquals "whole array" "foo foo foo" "${array_a[*]}"
-  assertEquals "size of array" 3 "${#array_a[@]}"
-
-  typeset -a array_b
-  array_b[1]=foo
-  array_b[2]=bar
-  array_b[5]=baz
-
-  assertEquals "array index element" "foo" "${array_b[1]}"
-  assertEquals "array index element" "bar" "${array_b[2]}"
-  assertEquals "array index element" "baz" "${array_b[5]}"
-  assertNull "null array index element" "${array_b[3]:+x}"
 }
 
 function test_source {
@@ -492,10 +472,5 @@ function test_dynamic_function_call {
 
   unset -f my_bar my_qux
 }
-
-if [ -n "${ZSH_VERSION-}" ]; then
-  SHUNIT_PARENT="$0"
-  setopt shwordsplit
-fi
 
 . ./shunit2

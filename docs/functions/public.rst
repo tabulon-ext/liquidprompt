@@ -14,11 +14,21 @@ their config.
    The config is sourced, and the environment scanned again for programs needed
    for specific features.
 
-   Lastly, :func:`prompt_on` is called to enabled the prompt.
+   Lastly, :func:`prompt_on` is called to enable the prompt.
 
    .. versionadded:: 2.0
 
+.. function:: lp_help([help_section])
+
+   Print help information for ``liquidprompt`` or any of the public functions.
+
+   *help_section* can be any of the public functions named on this page.
+
+   .. versionadded:: 2.3
+
 .. function:: lp_title([title_string])
+
+   Not to be confused with :func:`_lp_title`.
 
    Set *title_string* as the terminal title. This overrides any title set by the
    current theme.
@@ -47,9 +57,18 @@ their config.
    The optional flag ``--list`` will instead list all currently loaded
    themes.
 
+   The variable :envvar:`LP_THEME` can be set to a theme name, which is
+   essentially equivalent to calling this function. :envvar:`LP_THEME` will
+   always hold the currently active theme; it is updated by this function. If
+   :envvar:`LP_THEME` is set to an invalid theme name, it will be reset to the
+   previous value.
+
    This function supports shell autocompletion.
 
    .. versionadded:: 2.0
+
+   .. versionchanged:: 2.2
+      :envvar:`LP_THEME` reading and setting added.
 
 .. function:: lp_terminal_format(foreground_color, [background_color], \
                                  [bold], [underline], \
@@ -131,10 +150,11 @@ their config.
 
 .. function:: prompt_tag([prefix_string])
 
-   Sets a prefix that will be displayed before every prompt. Postpends a space
-   to the input string.
+   Sets a prefix that will be displayed before every prompt.
 
    Internally, this function sets :attr:`LP_PS1_PREFIX` to *prefix_string*.
-   If a trailing space is not wanted, set :attr:`LP_PS1_PREFIX` manually.
 
    To unset the prefix, call :func:`prompt_tag` with no arguments.
+
+   .. versionchanged: 2.3
+      No longer postpends a space.

@@ -9,44 +9,34 @@ jobs:
   build:
     name: Upload Release Asset
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 1
+        uses: actions/checkout@v6
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.x'
+          python-version: '3.13'
       - name: Install Python dependencies
         working-directory: ./docs
         run: python3 -m pip install -r requirements.txt
       - name: Build manual pages
         working-directory: ./docs
         run: make man
+      - name: Build example config file
+        run: ./tools/config-from-doc.sh > liquidpromptrc-dist
       - name: Create output directory
         run: mkdir -v ./.output
       - name: Create release tarball
-        run: tar --exclude-vcs --exclude='./.*' --transform 's/^\./liquidprompt/' -zcvf ./.output/liquidprompt.tar.gz .
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: tar --exclude-vcs --exclude='./.*' --transform 's/^\./liquidprompt/' -zcvf ./.output/liquidprompt-${{ github.ref_name }}.tar.gz .
+      - name: Create release and upload release asset
+        uses: softprops/action-gh-release@v3
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
+          name: Version ${{ github.ref }}
+          body_path: CHANGELOG.md
           draft: true
           prerelease: false
-      - name: Get the tag name
-        id: tag_name
-        run: echo ::set-output name=tag::${GITHUB_REF#refs/tags/}
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./.output/liquidprompt.tar.gz
-          asset_name: liquidprompt-${{ steps.tag_name.outputs.tag }}.tar.gz
-          asset_content_type: application/gzip
+          files: |
+            liquidprompt
+            ./.output/liquidprompt-${{ github.ref_name }}.tar.gz

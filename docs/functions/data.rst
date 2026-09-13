@@ -47,8 +47,21 @@ Battery
    .. versionchanged:: 2.1
       Implemented `sysfs` method as the default way of getting battery status.
 
+
 Development Environment
 -----------------------
+
+.. function:: _lp_cmake() -> var:lp_cmake_compiler, var:lp_cmake_generator, var:lp_cmake_buildtype
+
+   Returns ``true`` if a CMake context is found. Parse the data in
+   `CMakeCache.txt` and returns the basename of the configured compiler,
+   generator (e.g. "Unix Makefiles"), and build type ("Debug", "Release", etc.).
+   Some generator names are shorten: "Makefiles" becomes "Make" and "Visual
+   Studio" becomes "VS".
+
+   Can be disabled by :attr:`LP_ENABLE_CMAKE`.
+
+   .. versionadded:: 2.2
 
 .. function:: _lp_kubernetes_context() -> var:lp_kubernetes_context, var:lp_kubernetes_namespace
 
@@ -72,9 +85,18 @@ Development Environment
    Returns ``true`` if a Node.js environment is detected. Returns the virtual
    environment name.
 
-   Can be disabled by :attr:`LP_ENABLE_NODE_VENV`.
+   Can be enabled by :attr:`LP_ENABLE_NODE_VENV`.
 
    .. versionadded:: 2.1
+
+.. function:: _lp_perl_env() -> var:lp_perl_env
+
+   Returns ``true`` if a Perlbrew or PLENV Perl environment is detected.
+   Returns the virtual environment name.
+
+   Can be disabled by :attr:`LP_ENABLE_PERL_VENV`.
+
+   .. versionadded:: 2.2
 
 .. function:: _lp_python_env() -> var:lp_python_env
 
@@ -87,6 +109,10 @@ Development Environment
    Can be disabled by :attr:`LP_ENABLE_VIRTUALENV`.
 
    .. versionadded:: 2.0
+
+   .. versionchanged:: 2.1
+      Displays the "prompt string" first (the ``--prompt`` argument when setting
+      up the virtualenv).
 
 .. function:: _lp_ruby_env() -> var:lp_ruby_env
 
@@ -123,6 +149,49 @@ Development Environment
    .. versionadded:: 2.1
 
 
+Disks and Memory
+----------------
+
+.. function:: _lp_disk -> var:lp_disk, var:lp_disk_human, var:lp_disk_perc
+
+   Gather information about the current state of the hard drive hosting the
+   *current directory*:
+
+   * available space in kibi-bytes (``lp_disk``, that is, 1024 bytes),
+   * available space in human-readable form, using binary unit prefixes
+     (``lp_disk_human``, see also :func:`__lp_bytes_to_human`).
+   * available space as a percentage of total (``lp_disk_perc``).
+
+   Returns ``true`` if the used space is below at least one of the user-defined
+   thresholds:
+
+   * :attr:`LP_DISK_THRESHOLD`
+   * :attr:`LP_DISK_THRESHOLD_PERC`
+
+   Can be disabled by :attr:`LP_ENABLE_DISK`.
+
+   .. versionadded:: 2.2
+
+.. function:: _lp_ram -> var:lp_ram, var:lp_ram_human, var:lp_ram_perc
+
+   Gather information about the current state of the RAM:
+
+   * available space in kibi-bytes (``lp_ram``, that is, 1024 bytes),
+   * available space in human-readable form, using binary unit prefixes
+     (``lp_ram_human``, see also :func:`__lp_bytes_to_human`).
+   * available space as a percentage of total (``lp_ram_perc``).
+
+   Returns ``true`` if the used space is below at least one of the user-defined
+   thresholds:
+
+   * :attr:`LP_RAM_THRESHOLD`
+   * :attr:`LP_RAM_THRESHOLD_PERC`
+
+   Can be disabled by :attr:`LP_ENABLE_RAM`.
+
+   .. versionadded:: 2.2
+
+
 Environment
 -----------
 
@@ -141,6 +210,9 @@ Environment
    Returns ``true`` if there is a connected X11 display.
 
    .. versionadded:: 2.0
+
+   .. versionchanged:: 2.2
+      Can be disabled by :attr:`LP_ENABLE_DISPLAY`.
 
 .. function:: _lp_connection() -> var:lp_connection
 
@@ -162,25 +234,27 @@ Environment
 
 .. function:: _lp_container() -> var:lp_container
 
-   Returns ``true`` if the shell is running in a container.  In that case,
-   the return variable is set to a string matching the container type. Valid
-   values:
+   Returns ``true`` if the shell is running in a container. In that case, the
+   return variable is set to a string matching the container type. Possible
+   values include (but are not limited to):
 
    * ``Singlrty`` - running in a `Singularity`_ container
    * ``Toolbox`` - running in a `Toolbox`_ container
    * ``Podman`` - running in a `Podman`_ container
    * ``Docker`` - running in a `Docker`_ container
    * ``LXC`` - running in an `LXC`_ container
+   * ``nspawn`` - running in a `systemd-nspawn`_ container
 
    .. _Singularity: https://sylabs.io/guides/latest/user-guide/
    .. _Toolbox: https://containertoolbx.org/
    .. _Podman: https://podman.io/
    .. _Docker: https://www.docker.com/
    .. _LXC: https://linuxcontainers.org/lxc/
+   .. _systemd-nspawn: https://www.freedesktop.org/software/systemd/man/systemd-nspawn.html
 
    It is not possible to detect more than one containerization type to be
-   returned.  The containers are checked in the order listed above, and the
-   first one found will be returned.
+   returned. The containers are checked in the order listed above, and the first
+   one found will be returned.
 
     Can be enabled by :attr:`LP_ENABLE_CONTAINER`.
 
@@ -195,6 +269,32 @@ Environment
     Can be enabled by :attr:`LP_ENABLE_DIRSTACK`.
 
     .. versionadded:: 2.0
+
+.. function:: _lp_env_vars([color_if_set, [color_if_unset, [end_color]]]) -> var:lp_env_vars
+
+   Gather the states of the environment variables indicated in the
+   :attr:`LP_ENV_VARS` array,
+   and put them in the ``lp_env_vars`` array.
+
+   :attr:`LP_ENV_VARS` should be a list of environment variable names
+   to look for, along with the string to be displayed if the variable is set,
+   and an optional string to be displayed if the variable is not set.
+   The string to be displayed may contain a ``%s`` marker,
+   which will be replaced by the variable's content.
+
+   If ``color_if_set`` is passed, it will be used to color the *set*
+   variables string. If ``color_if_unset`` is passed, it will be used to color
+   the *unset* variables string.
+
+   ``end_color`` is added at the end of each variable string.
+   It defaults to "$NO_COL" (color reset).
+
+   Returns ``true`` if at least one variable representation is added to
+   the result array. Returns ``1`` if the no variable representation is set.
+   Returns ``2`` if the user disabled the feature
+   with :attr:`LP_ENABLE_ENV_VARS`.
+
+   .. versionadded:: 2.2
 
 .. function:: _lp_error() -> var:lp_error
 
@@ -212,6 +312,15 @@ Environment
 
    .. versionadded:: 2.0
 
+.. function:: _lp_error_meaning() -> var:lp_error_meaning
+
+   Returns ``true`` if the last user shell command returned a non-zero exit
+   code. Returns (in the return variable) a guess of the meaning of that error.
+
+   Can be disabled by :attr:`LP_ENABLE_ERROR_MEANING`.
+
+   .. versionadded:: 2.2
+
 .. function:: _lp_http_proxy() -> var:lp_http_proxy
 
    Returns ``true`` if an HTTP or HTTPS proxy is enabled through environment
@@ -221,15 +330,26 @@ Environment
 
    .. versionadded:: 2.0
 
-.. function:: _lp_multiplexer() -> var:lp_mulitplexer
+.. function:: _lp_multiplexer() -> var:lp_multiplexer
 
    Returns ``true`` if the current shell context is inside a terminal
    multiplexer. Returns a string matching the multiplexer:
 
    * ``tmux``
    * ``screen``
+   * ``shpool``
+   * ``herdr``
+   * ``zellij``
 
    .. versionadded:: 2.0
+
+   .. versionchanged:: 2.2
+      Can be disabled by :attr:`LP_ENABLE_MULTIPLEXER`,
+      except if ``--internal`` is passed (i.e. for internal use only).
+      Return variable renamed from ``lp_mulitplexer`` to ``lp_multiplexer``.
+
+   .. versionchanged:: 2.4
+      Added support for ``herdr`` and ``zellij``.
 
 .. function:: _lp_shell_level() -> var:lp_shell_level
 
@@ -256,6 +376,18 @@ Environment
 Jobs
 ----
 
+.. function:: _lp_attached_sessions() -> var:lp_attached_sessions
+
+   Returns ``true`` if any attached running multiplexer sessions are found.
+   Returns an integer count of how many sessions were found.
+
+   If currently running inside an active multiplexer session, the current
+   session is excluded from the count.
+
+   Can be enabled by :attr:`LP_ENABLE_ATTACHED_SESSIONS`.
+
+   .. versionadded:: 2.4
+
 .. function:: _lp_detached_sessions() -> var:lp_detached_sessions
 
    Returns ``true`` if any detached multiplexer sessions are found. Returns an
@@ -265,12 +397,15 @@ Jobs
 
    .. versionadded:: 2.0
 
+   .. versionchanged:: 2.4
+      Added support for ``herdr`` and ``zellij``.
+
 .. function:: _lp_jobcount() -> var:lp_running_jobs, var:lp_stopped_jobs
 
    Returns ``true`` if any shell background jobs are found. Returns an integer
    count of how many jobs are running and how many are stopped.
 
-   Stopped jobs are jobs suspended with Ctrl-Z.
+   Stopped jobs are jobs suspended with `Ctrl-Z`.
 
    Running jobs are jobs started with the ``command &`` syntax, or stopped jobs
    started again with the ``bg`` command.
@@ -323,15 +458,15 @@ OS
 
    .. versionadded:: 2.0
 
-.. function:: _lp_hostname() -> var:lp_hostname, var:lp_hostname_raw
+   .. versionchanged:: 2.2
+      Can be disabled by :attr:`LP_ENABLE_CHROOT`.
+
+.. function:: _lp_hostname() -> var:lp_hostname
 
    Returns ``true`` if a hostname should be displayed. Returns ``1`` if the
    connection type is local and :attr:`LP_HOSTNAME_ALWAYS` is not ``1``.
 
    Returns the hostname string in *lp_hostname*.
-
-   Returns the hostname string not passed through :func:`__lp_escape` in
-   *lp_hostname_raw*.
 
    Can be disabled by :attr:`LP_HOSTNAME_ALWAYS` set to ``-1``.
 
@@ -339,9 +474,39 @@ OS
 
    .. versionchanged:: 2.1
       Returns the actual hostname instead of a shell prompt escape code.
-      Added *lp_hostname_raw* return value.
-      No longer sets :attr:`LP_HOST_SYMBOL` to the same return string.
+      No longer sets ``LP_HOST_SYMBOL`` to the same return string.
       Added :attr:`LP_HOSTNAME_METHOD` to configure display method.
+
+   .. versionchanged:: 2.4
+      Added :attr:`LP_HOSTNAME_TRIM` to remove domain sections from the
+      hostname.
+
+.. function:: _lp_os() -> var:lp_os_arch, var:lp_os_family, var:lp_os_kernel, var:lp_os_distrib, var:lp_os_version
+
+   Gather data about the current Operating System.
+
+   Returns ``true`` if it was able to gather all possible data.
+   Returns ``1`` if some expected information was missing.
+   Returns ``2`` if the user disabled the feature with :attr:`LP_ENABLE_OS`.
+
+   Returns data in ``lp_os_*`` variables:
+
+   - processor architecture (e.g. x86_64, i686, etc.),
+   - OS family (BSD, UNIX, GNU or Windows),
+   - OS kernel (Linux, Darwin, Cygwin, etc.),
+   - Linux *distribution* (e.g. ubuntu, arch, mandrake, etc.),
+   - Linux distribution *version codename* (e.g. focal, ada, buzz, etc.)
+
+   Each data source can be disabled
+   via its corresponding configuration variable:
+
+   - :attr:`LP_ENABLE_OS_ARCH`
+   - :attr:`LP_ENABLE_OS_FAMILY`
+   - :attr:`LP_ENABLE_OS_KERNEL`
+   - :attr:`LP_ENABLE_OS_DISTRIB`
+   - :attr:`LP_ENABLE_OS_VERSION`
+
+   .. versionadded:: 2.2
 
 .. function:: _lp_sudo_active()
 
@@ -367,15 +532,12 @@ OS
 
    .. versionadded:: 2.0
 
-.. function:: _lp_username() -> var:lp_username, var:lp_username_raw
+.. function:: _lp_username() -> var:lp_username
 
    Returns ``true`` if a username should be displayed. Returns ``1`` if the
    user is the login user and :attr:`LP_USER_ALWAYS` is not ``1``.
 
    Returns the current user ID in *lp_username*.
-
-   Returns the current user ID not passed through :func:`__lp_escape` in
-   *lp_username_raw*.
 
    Can be disabled by :attr:`LP_USER_ALWAYS` set to ``-1``.
 
@@ -383,7 +545,6 @@ OS
 
    .. versionchanged:: 2.1
       Returns the actual username instead of a shell prompt escape code.
-      Added *lp_username_raw* return value.
 
 Path
 ----
@@ -429,6 +590,10 @@ Path
 
    .. versionchanged:: 2.1
       Changed *lp_path* to no longer contain shell escapes.
+
+   .. versionchanged:: 2.3
+      Embedded path links now link to each directory by name instead of all to
+      the current working directory.
 
 Runtime
 -------
@@ -491,3 +656,23 @@ Time
    ``0``.
 
    .. versionadded:: 2.0
+
+Wireless
+--------
+
+.. function:: _lp_wifi_signal_strength() -> var:lp_wifi_signal_strength
+
+   Returns ``true`` if the lowest wireless signal strength is lower than the
+   threshold. Returns the lowest strength percentage.
+
+   If the threshold is not surpassed, the lowest signal strength is still
+   returned.
+
+   If no wireless signal data is found, returns ``false`` and
+   *lp_wifi_signal_strength* will not be set.
+
+   The threshold is configured with :attr:`LP_WIFI_STRENGTH_THRESHOLD`.
+
+   Can be disabled by :attr:`LP_ENABLE_WIFI_STRENGTH`.
+
+   .. versionadded:: 2.1

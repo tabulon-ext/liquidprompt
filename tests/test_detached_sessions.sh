@@ -2,13 +2,22 @@
 # Error on unset variables
 set -u
 
+if [ -n "${ZSH_VERSION-}" ]; then
+  SHUNIT_PARENT="$0"
+  setopt shwordsplit ksh_arrays
+fi
+
 . ../liquidprompt --no-activate
 
 LP_ENABLE_DETACHED_SESSIONS=1
 _LP_ENABLE_SCREEN=1
 _LP_ENABLE_TMUX=1
+_LP_ENABLE_SHPOOL=1
+_LP_ENABLE_HERDR=1
+_LP_ENABLE_ZELLIJ=1
+unset HERDR_SESSION HERDR_SESSION_NAME HERDR_ENV ZELLIJ ZELLIJ_SESSION_NAME
 
-typeset -a screen_outputs screen_values tmux_outputs tmux_values
+typeset -a screen_outputs screen_values shpool_outputs shpool_values tmux_outputs tmux_values herdr_outputs herdr_values zellij_outputs zellij_values
 
 # Add test cases to these arrays like below
 
@@ -71,18 +80,103 @@ screen_outputs+=(
 )
 screen_values+=(0)
 
+# Linux 5.14.0-427.28.1.el9_4.x86_64 #1 SMP PREEMPT_DYNAMIC Wed Jul 31 15:28:35 UTC 2024 x86_64 x86_64 x86_64 GNU/Linux
+shpool_outputs+=(
+"NAME   	STARTED_AT     	STATUS
+"
+)
+shpool_values+=(0)
+shpool_outputs+=(
+"NAME   	STARTED_AT     	STATUS
+test   	2024-09-26T16:06:07.352+00:00  	disconnected
+"
+)
+shpool_values+=(1)
+
+herdr_outputs+=(
+"NAME   STATUS
+"
+)
+herdr_values+=(0)
+herdr_outputs+=(
+"NAME   STATUS
+main   detached
+"
+)
+herdr_values+=(1)
+
+# Zellij outputs
+zellij_outputs+=(
+""
+)
+zellij_values+=(0)
+
+zellij_outputs+=(
+"session1 [Created 10s ago] (current)
+"
+)
+zellij_values+=(0)
+
+zellij_outputs+=(
+"session1 [Created 10s ago]
+"
+)
+zellij_values+=(1)
+
+zellij_outputs+=(
+"session1 [Created 10s ago] (current)
+session2 [Created 5s ago]
+"
+)
+zellij_values+=(1)
+
+zellij_outputs+=(
+"session1 [Created 10s ago] (EXITED - attach to resurrect)
+"
+)
+zellij_values+=(0)
+
+zellij_outputs+=(
+"s1 [Created 10s ago] (current)
+s2 [Created 8s ago]
+s3 [Created 5s ago]
+s4 [Created 1s ago] (EXITED - attach to resurrect)
+"
+)
+zellij_values+=(2)
+
 
 function test_screen_sessions {
 
   screen() {
     printf '%s' "$__screen_output"
   }
+  shpool() { : ; }
   tmux() { : ; }
+  herdr() { : ; }
+  zellij() { : ; }
 
   for (( index=0; index < ${#screen_values[@]}; index++ )); do
     __screen_output=${screen_outputs[$index]}
     _lp_detached_sessions
     assertEquals "Screen sessions output at index ${index}" "${screen_values[$index]}" "$lp_detached_sessions"
+  done
+}
+
+function test_shpool_sessions {
+
+  shpool() {
+    printf '%s' "$__shpool_output"
+  }
+  screen() { : ; }
+  tmux() { : ; }
+  herdr() { : ; }
+  zellij() { : ; }
+
+  for (( index=0; index < ${#shpool_values[@]}; index++ )); do
+    __shpool_output=${shpool_outputs[$index]}
+    _lp_detached_sessions
+    assertEquals "shpool sessions output at index ${index}" "${shpool_values[$index]}" "$lp_detached_sessions"
   done
 }
 
@@ -92,6 +186,9 @@ function test_tmux_sessions {
     printf '%s' "$__tmux_output"
   }
   screen() { : ; }
+  shpool() { : ; }
+  herdr() { : ; }
+  zellij() { : ; }
 
   for (( index=0; index < ${#tmux_values[@]}; index++ )); do
     __tmux_output=${tmux_outputs[$index]}
@@ -100,9 +197,55 @@ function test_tmux_sessions {
   done
 }
 
-if [ -n "${ZSH_VERSION-}" ]; then
-  SHUNIT_PARENT="$0"
-  setopt shwordsplit ksh_arrays
-fi
+function test_herdr_sessions {
+
+  herdr() {
+    printf '%s' "$__herdr_output"
+  }
+  screen() { : ; }
+  shpool() { : ; }
+  tmux() { : ; }
+  zellij() { : ; }
+
+  for (( index=0; index < ${#herdr_values[@]}; index++ )); do
+    __herdr_output=${herdr_outputs[$index]}
+    _lp_detached_sessions
+    assertEquals "herdr sessions output at index ${index}" "${herdr_values[$index]}" "$lp_detached_sessions"
+  done
+}
+
+function test_herdr_attached_session {
+
+  herdr() {
+    printf '%s' "NAME   STATUS
+main   running
+sub    detached
+"
+  }
+  screen() { : ; }
+  shpool() { : ; }
+  tmux() { : ; }
+  zellij() { : ; }
+
+  _lp_detached_sessions
+  assertEquals "herdr detached sessions count" "1" "$lp_detached_sessions"
+}
+
+function test_zellij_sessions {
+
+  zellij() {
+    printf '%s' "$__zellij_output"
+  }
+  screen() { : ; }
+  shpool() { : ; }
+  tmux() { : ; }
+  herdr() { : ; }
+
+  for (( index=0; index < ${#zellij_values[@]}; index++ )); do
+    __zellij_output=${zellij_outputs[$index]}
+    _lp_detached_sessions
+    assertEquals "zellij sessions output at index ${index}" "${zellij_values[$index]}" "$lp_detached_sessions"
+  done
+}
 
 . ./shunit2

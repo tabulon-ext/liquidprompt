@@ -4,10 +4,10 @@ Internal Functions
 .. contents::
    :local:
 
-These functions are designed to be used only by Liquidprompt internals and data
+These functions are designed to be used only by Liquid Prompt internals and data
 functions. These functions should not be used by users or themes, as they are
 not guaranteed to be stable between versions. There are documented here for
-information for those developing Liquidprompt.
+information for those developing Liquid Prompt.
 
 Config
 ------
@@ -26,6 +26,10 @@ Config
    .. versionchanged:: 2.0
       Renamed from ``_lp_source_config``.
       Added ``--no-config`` flag.
+
+   .. versionchanged:: 2.4
+      The **short** :attr:`LP_HOSTNAME_METHOD` is aliased to **full** with
+      :attr:`LP_HOSTNAME_TRIM` set to ``-1``.
 
 Formatting
 ----------
@@ -172,6 +176,12 @@ Path
       Return method changed from stdout.
       Optional parameter *path* added.
 
+   .. versionchanged:: 2.3
+      Added support for `Zsh named directories`_.
+      Use `print -D` internal function on Zsh.
+
+   .. _Zsh named directories: https://zsh.sourceforge.io/Doc/Release/Shell-Builtin-Commands.html#index-hash-1
+
 Prompt
 ------
 
@@ -219,8 +229,8 @@ Theme
 
 .. function:: __lp_theme_list() -> var:lp_theme_list
 
-   Returns an array of Liquidprompt themes currently loaded in memory. Looks for
-   functions matching ``_lp_*_theme_prompt``.
+   Returns an array of Liquid Prompt themes currently loaded in memory. Looks
+   for functions matching ``_lp_*_theme_prompt``.
 
    .. versionadded:: 2.0
 
@@ -265,6 +275,9 @@ Temperature
    .. versionchanged:: 2.0
       Renamed from ``_lp_temp_detect``.
 
+   .. versionchanged:: 2.1
+      No longer takes arguments of what backends to try.
+
 .. function:: __lp_temp_acpi() -> var:lp_temperature
 
    A temperature backend using ``acpi``.
@@ -273,13 +286,31 @@ Temperature
       Renamed from ``_lp_temp_acpi``.
       Return variable changed from ``temperature``.
 
+.. function:: __lp_temp_iSMC() -> var:lp_temperature
+
+   A temperature backend using ``iSMC``.
+
+   .. versionadded:: 2.4
+
 .. function:: __lp_temp_sensors() -> var:lp_temperature
 
-   A temperature backend using lm-sensors provided ``sensors``.
+   A temperature backend using `lm-sensors` provided ``sensors``.
 
    .. versionchanged:: 2.0
       Renamed from ``_lp_temp_sensors``.
       Return variable changed from ``temperature``.
+
+.. function:: __lp_temp_smctemp() -> var:lp_temperature
+
+   A temperature backend using ``smctemp``.
+
+   .. versionadded:: 2.4
+
+.. function:: __lp_temp_sysfs() -> var:lp_temperature
+
+   A temperature backend reading directly from the Linux sysfs file system.
+
+   .. versionadded:: 2.1
 
 Utility
 ---------
@@ -320,3 +351,22 @@ Utility
    replacement for ``wc -l``.
 
    .. versionadded:: 2.0
+
+.. function:: __lp_strip_escapes(string) -> var:ret
+
+   Remove shell escape characters so *string* prints correctly in a terminal
+   title, or can be measured for printing character length.
+
+   .. versionadded:: 2.1
+
+Wireless
+--------
+.. function:: __lp_wifi_signal_strength_raw() -> var:level
+
+   Returns the lowest raw wireless signal strength in dBm. Return ``2`` if no
+   data is found.
+
+   Implementation depends on operating system. This function does not exist on
+   all operating systems.
+
+   .. versionadded:: 2.1

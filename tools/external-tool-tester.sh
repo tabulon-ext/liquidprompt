@@ -6,16 +6,14 @@ set +e
 # Don't error (or do anything) for no matching globs.
 if [ -n "${ZSH_VERSION-}" ]; then
   setopt nullglob
-else  # Bash
-  shopt -s nullglob
 fi
+
 
 # Error if the output is a terminal
 if [ -t 1 ]; then
   printf 'This script must be redirected to a file, or special characters will be lost
-  Ex: %s > output.txt\nOr, to upload directly:
-  %s | curl -F "sprunge=<-" "http://sprunge.us"\n' "$0" "$0"
-  exit 1
+  Ex: %s > external-tool-results.txt\nAttach the file in a GitHub issue comment.\n' "$0"
+  exit 2
 fi
 
 # Export needed variables
@@ -27,23 +25,28 @@ uname -a
 printf -- '---lpb_release:\n'
 lsb_release -a 2>/dev/null || printf '<none>\n'
 printf -- '---/etc/*release:\n'
-cat /etc/*release 2>/dev/null || printf '<none>\n'
+cat /etc/*release 2>/dev/null </dev/null || printf '<none>\n'
 printf -- '---/etc/issue*:\n'
-cat /etc/issue* 2>/dev/null || printf '<none>\n'
+cat /etc/issue* 2>/dev/null </dev/null || printf '<none>\n'
 printf -- '---/proc/version:\n'
-cat /proc/version 2>/dev/null || printf '<none>\n'
+cat /proc/version 2>/dev/null </dev/null || printf '<none>\n'
 
 # Sanity check to verify special characters have not been lost on upload
 printf '\nSpecial character check: \a\b\t\001\r\n'
 
 test_tool() {
-  local stderr
   printf '\nCommand: "%s"\n--------stdout--------\n' "$*"
   { stderr="$( { "$@"; } 2>&1 1>&3 3>&- )"; } 3>&1
   printf '\n--------stderr--------\n%s\n----------------------\nReturn code: "%s"\n' "$stderr" "$?"
 }
 
+test_tool bash --version
+test_tool zsh --version
+
 test_tool uname
+test_tool uname -s
+test_tool uname -s -m
+test_tool uname -o
 
 hostname_cksum() {
   hostname | cksum
@@ -57,6 +60,8 @@ test_tool tput md
 test_tool tput smul
 test_tool tput us
 test_tool tput colors
+test_tool tput bel
+test_tool tput bl
 test_tool tput setaf 0
 test_tool tput AF 0
 test_tool tput AF 0 0 0
@@ -64,12 +69,13 @@ test_tool tput setab 0
 test_tool tput AB 0
 test_tool tput AB 0 0 0
 
-test_tool who am i
 test_tool ps -o comm= -p "$PPID"
 test_tool logname
 
 test_tool screen -ls
+test_tool shpool list
 test_tool tmux list-sessions
+test_tool herdr session list
 
 for power_supply in "/sys/class/power_supply/"*; do
   for interface in "${power_supply}/"*; do
@@ -82,16 +88,42 @@ test_tool pmset -g batt
 test_tool nproc
 # Not actually a command used, we read directly from the file
 test_tool cat /proc/loadavg
+test_tool cat /proc/meminfo
+test_tool cat /proc/net/wireless
+test_tool cat /var/run/dmesg.boot
+test_tool /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport --getinfo
 test_tool sysctl -n hw.ncpu
 test_tool sysctl -n vm.loadavg
 test_tool kstat -m cpu_info
 test_tool uptime
+test_tool df -k -P
+test_tool vm_stat
+test_tool cat /proc/meminfo
+test_tool cat /var/run/dmesg.boot
 
 test_tool sensors -u
 test_tool acpi -t
+test_tool smctemp -c
+test_tool iSMC temp --output influx
+for interface in \
+    /sys/class/hwmon/hwmon*/temp*_input \
+    /sys/class/hwmon/hwmon*/device/temp*_input \
+    /sys/devices/platform/coretemp.*/hwmon/hwmon*/temp*_input \
+    /sys/class/thermal/thermal_zone*/temp \
+  ; do
+  test_tool cat "$interface"
+done
 
 test_tool date '+%I %M'
 test_tool tty
 test_tool basename -- /dev/pts/0
 
+test_tool perbrew use
+test_tool plenv version-name
+test_tool rvm-prompt i v g s
+test_tool rbenv version-name
+
+# shellcheck disable=SC2016
 printf 'Tests complete.\nMake sure to upload the file directly, do not `cat` and copy paste!\n' >&2
+
+# vim: ft=sh et sts=2 sw=2 tw=120
